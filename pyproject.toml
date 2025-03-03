@@ -1,0 +1,7 @@
+[project]
+name = "nissan-connect-scraper"
+version = "0.1.0"
+description = "CLI tool to scrape vehicle data from Nissan Connect"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["appium-python-client>=4.5.1", "typer>=0.15.2"]
