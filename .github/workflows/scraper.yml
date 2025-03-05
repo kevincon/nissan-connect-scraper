@@ -1,0 +1,153 @@
+name: Nisscan Connect Scraper
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "The ref of the kevincon/nissan-connect-scraper repository to use."
+        required: false
+        type: string
+        default: "${{ github.head_ref || 'main' }}"
+      user-id:
+        description: "NissanConnect® account user ID to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter \"demo mode\" instead of signing in."
+        required: false
+        type: string
+      password:
+        description: "NissanConnect® account password to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter \"demo mode\" instead of signing in."
+        required: false
+        type: string
+      android-app-version:
+        description: "The version of the NissanConnect® Android app to use."
+        required: false
+        type: string
+        default: 7.9.7
+      convert-times-to-timezone:
+        description: "The timezone to convert times to, e.g. \"US/Pacific\""
+        required: false
+        type: string
+        default: "UTC"
+    outputs:
+      last-refresh-date:
+        description: "The last refresh date (e.g. \"Fri 05:30 AM\")"
+        value: ${{ jobs.scrape.outputs.last-refresh-date }}
+      battery-state-of-charge:
+        description: "The state of charge of the battery (out of 100, e.g. \"75\"))"
+        value: ${{ jobs.scrape.outputs.battery-state-of-charge }}
+      charger-state:
+        description: "The charger state (e.g. \"UNPLUGGED...\")"
+        value: ${{ jobs.scrape.outputs.charger-state }}
+      range-minimum:
+        description: "The minimum range in your account's preferred units (e.g. \"125\" miles)"
+        value: ${{ jobs.scrape.outputs.range-minimum }}
+      range-maximum:
+        description: "The maximum range in your account's preferred units (e.g. \"129\" miles)"
+        value: ${{ jobs.scrape.outputs.range-maximum }}
+      interior-temperature-range:
+        description: "The interior temperature range in your account's preferred units (e.g. \"74-84°F\")"
+        value: ${{ jobs.scrape.outputs.interior-temperature-range }}
+      level-two-charger-eta:
+        description: "The level two charger ETA (e.g. \"4h:30m\")"
+        value: ${{ jobs.scrape.outputs.level-two-charger-eta }}
+jobs:
+  scrape:
+    name: Scrape
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_API_LEVEL: 35
+      ANDROID_TARGET: "playstore"
+      ANDROID_ARCH: "x86_64"
+      ANDROID_PROFILE: "medium_phone"
+      ANDROID_NUM_CPUS: 4
+      ANDROID_EMULATOR_OPTIONS: "-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics"
+      AVD_NAME: "Nissan_Connect_Scraper_Avd"
+      APP_ID: "com.aqsmartphone.android.nissan"
+      APK_PATH: "/tmp/apk"
+      COLUMNS: 120
+      FORCE_COLOR: 1
+    outputs:
+      last-refresh-date: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
+      battery-state-of-charge: ${{ steps.run-and-scrape.outputs.battery-state-of-charge }}
+      charger-state: ${{ steps.run-and-scrape.outputs.charger-state }}
+      range-minimum: ${{ steps.run-and-scrape.outputs.range-minimum }}
+      range-maximum: ${{ steps.run-and-scrape.outputs.range-maximum }}
+      interior-temperature-range: ${{ steps.run-and-scrape.outputs.interior-temperature-range }}
+      level-two-charger-eta: ${{ steps.run-and-scrape.outputs.level-two-charger-eta }}
+    steps:
+      - name: Enable KVM group permissions
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/checkout@v4
+        with:
+          repository: "kevincon/nissan-connect-scraper"
+          ref: "${{ inputs.ref }}"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.x"
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - run: mkdir -p "${{ env.APK_PATH }}"
+      - name: Install apkeep
+        uses: jaxxstorm/action-install-gh-release@v1
+        with:
+          repo: EFForg/apkeep
+          tag: 0.17.0
+          extension-matching: disable
+          arch: x86_64-unknown-linux-gnu
+          platform: unknown-linux-gnu
+          rename-to: apkeep
+          chmod: 0755
+          cache: enable
+      - name: APK cache
+        uses: actions/cache@v4
+        id: apk-cache
+        with:
+          path: ${{ env.APK_PATH }}
+          key: apk-${{ env.APP_ID }}-${{ inputs.android-app-version }}
+      - name: Download APK for caching
+        if: steps.apk-cache.outputs.cache-hit != 'true'
+        run: apkeep --app "${{ env.APP_ID }}@${{ inputs.android-app-version }}" "${{ env.APK_PATH }}"
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+            ~/.android/debug.keystore
+          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          avd-name: ${{ env.AVD_NAME }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: ${{ env.ANDROID_PROFILE }}
+          cores: ${{ env.ANDROID_NUM_CPUS }}
+          force-avd-creation: false
+          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+      - name: Run and scrape Nissan Connect
+        id: run-and-scrape
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          ANDROID_VIRTUAL_DEVICE: ${{ env.AVD_NAME }}
+          NISSAN_CONNECT_USER_ID: ${{ inputs.user-id }}
+          NISSAN_CONNECT_PASSWORD: ${{ inputs.password }}
+          CONVERT_TIMES_TO_TIMEZONE: ${{ inputs.convert-times-to-timezone }}
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          avd-name: ${{ env.AVD_NAME }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: ${{ env.ANDROID_PROFILE }}
+          cores: ${{ env.ANDROID_NUM_CPUS }}
+          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          script: uv run main.py "${{ env.APK_PATH }}/${{ env.APP_ID }}@${{ inputs.android-app-version }}.apk" >> $GITHUB_OUTPUT

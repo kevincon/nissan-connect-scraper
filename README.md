@@ -1,53 +1,22 @@
 # Nissan Connect Scraper
 
+![GitHub Release](https://img.shields.io/github/v/release/kevincon/nissan-connect-scraper)
+![GitHub License](https://img.shields.io/github/license/kevincon/nissan-connect-scraper)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kevincon/nissan-connect-scraper/.github%2Fworkflows%2Fmainci.yml?branch=main)](https://github.com/kevincon/nissan-connect-scraper/actions/workflows/mainci.yml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/kevincon/nissan-connect-scraper/main.svg)](https://results.pre-commit.ci/latest/github/kevincon/nissan-connect-scraper/main)
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/kevincon)
 
-```
-❯ apkeep -a com.aqsmartphone.android.nissan .
-Downloading com.aqsmartphone.android.nissan...
-[00:00:09] ██████████████████████████████████████░░ 95.27 MiB/99.42 MiB | com.aqsmartphone.and
-com.aqsmartphone.android.nissan downloaded successfully!
+> [!IMPORTANT]
+> The NissanConnect® Application Terms of Use (contained in the app itself, effective January 23, 2018) state (**emphasis** mine):
+>
+> The Sites, the App, or any of the content provided in the Site or the App, including, but not limited to, text, images, buttons, html code, audio and video, may not be copied, reverse engineered, reproduced, republished, uploaded, posted, transmitted or distributed without our prior written consent. You may not mirror any of the content from the Site on another website or in any other media. **You may, however, download, display, and/or print one copy of the Site or of the App, or a part thereof, for your personal, non-commercial use without modifying the content displayed from either the Site or the App, including all copyright, trademark, and other proprietary notices.**
+>
+> This repo is for educational/demonstrative purposes. I have no affiliation with Nissan and neither I nor the software may be held liable for any consequences resulting from its use.
 
-❯ sha256sum com.aqsmartphone.android.nissan.apk
-00c10f77edb5714f6ec4e30384b19ef250e8f2f9d2eb680d67671f5eacf214ea  com.aqsmartphone.android.nissan.apk
+This repo contains a [reusable GitHub Actions workflow](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) that can be called from another GitHub repo to:
 
-❯ python main.py --demo ./com.aqsmartphone.android.nissan.apk
-Last Refresh Date: UPDATED MAR 02, 2025, 08:48 PM
-Battery State of Charge: 75
-Charger State: UNPLUGGED...
-Mile Range Minimum: 125
-Mile Range Maximum: 129
-Interior Temperature: 74-84°F
-Level Two Charger ETA: 4h:30m
-```
+1. launch the [NissanConnect® EV & Services Android app](https://play.google.com/store/apps/details?id=com.aqsmartphone.android.nissan) in an Android emulator
+1. sign into an account in the app using provided credentials (or alternatively launch the app in a "demo mode")
+1. scrape and output the information available about the [Nissan LEAF®](https://en.wikipedia.org/wiki/Nissan_Leaf) vehicle registered to the account
 
-```
-❯ python main.py --help
-
- Usage: main.py [OPTIONS] NISSAN_CONNECT_APP_APK
-
-╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────╮
-│ *    nissan_connect_app_apk      FILE  Path to Nissan Connect app APK                        │
-│                                        [env var: NISSAN_CONNECT_APP_APK]                     │
-│                                        [default: None]                                       │
-│                                        [required]                                            │
-╰──────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Options ────────────────────────────────────────────────────────────────────────────────────╮
-│ --user-id                            TEXT     user ID                                        │
-│                                               [env var: NISSAN_CONNECT_USER_ID]              │
-│                                               [default: None]                                │
-│ --password                           TEXT     password                                       │
-│                                               [env var: NISSAN_CONNECT_PASSWORD]             │
-│                                               [default: None]                                │
-│ --demo                  --no-demo             Use demo mode                                  │
-│                                               [env var: NISSAN_CONNECT_DEMO]                 │
-│                                               [default: no-demo]                             │
-│ --appium-server-url                  TEXT     Appium server URL                              │
-│                                               [env var: APPIUM_SERVER_URL]                   │
-│                                               [default: localhost]                           │
-│ --appium-server-port                 INTEGER  Appium server port                             │
-│                                               [env var: APPIUM_SERVER_PORT]                  │
-│                                               [default: 4723]                                │
-│ --help                                        Show this message and exit.                    │
-╰──────────────────────────────────────────────────────────────────────────────────────────────╯
-```
+For an example of a repo that uses this workflow, see https://github.com/kevincon/nissan-leaf-widget-updater.
