@@ -1,0 +1,9 @@
+{
+  "name": "nissan-connect-scraper",
+  "version": "0.0.0",
+  "private": true,
+  "devDependencies": {
+    "appium": "^2.16.2",
+    "appium-uiautomator2-driver": "^4.1.0"
+  }
+}

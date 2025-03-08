@@ -5,9 +5,13 @@ build/
 dist/
 wheels/
 *.egg-info
+.ruff_cache/
 
 # Virtual environments
 .venv
 
 # APKs
 *.apk
+
+# NPM-generated files
+node_modules
