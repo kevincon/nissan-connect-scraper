@@ -112,6 +112,10 @@ def main(
         deviceName="Android",
         language="en",
         locale="US",
+        disableSuppressAccessibilityService="true",
+        uiautomator2ServerInstallTimeout="120000",
+        skipDeviceInitialization="true",
+        androidInstallTimeout="120000",
     )
     if avd:
         capabilities["appium:avd"] = avd
