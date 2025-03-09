@@ -51,11 +51,12 @@ jobs:
     name: Scrape
     runs-on: ubuntu-latest
     env:
-      ANDROID_API_LEVEL: 35
-      ANDROID_TARGET: "playstore"
+      ANDROID_API_LEVEL: 31
+      ANDROID_TARGET: "default"
       ANDROID_ARCH: "x86_64"
-      ANDROID_PROFILE: "medium_phone"
+      ANDROID_PROFILE: "Galaxy Nexus"
       ANDROID_NUM_CPUS: 4
+      ANDROID_RAM_SIZE: 2048M
       ANDROID_EMULATOR_OPTIONS: "-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -dns-server 8.8.8.8 -netfast -camera-back none -no-metrics"
       AVD_NAME: "Nissan_Connect_Scraper_Avd"
       APP_ID: "com.aqsmartphone.android.nissan"
@@ -71,11 +72,6 @@ jobs:
       interior-temperature-range: ${{ steps.run-and-scrape.outputs.interior-temperature-range }}
       level-two-charger-eta: ${{ steps.run-and-scrape.outputs.level-two-charger-eta }}
     steps:
-      - name: Enable KVM group permissions
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
       - uses: actions/checkout@v4
         with:
           repository: "kevincon/nissan-connect-scraper"
@@ -118,7 +114,7 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
             ~/.android/debug.keystore
-          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
+          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ runner.os }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -129,6 +125,7 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
           force-avd-creation: false
           emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
           disable-animations: false
@@ -148,5 +145,7 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
-          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save ${{ env.ANDROID_EMULATOR_OPTIONS}}
           script: uv run main.py "${{ env.APK_PATH }}/${{ env.APP_ID }}@${{ inputs.android-app-version }}.apk" >> $GITHUB_OUTPUT
