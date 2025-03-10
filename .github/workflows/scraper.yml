@@ -51,11 +51,12 @@ jobs:
     name: Scrape
     runs-on: ubuntu-latest
     env:
-      ANDROID_API_LEVEL: 35
+      ANDROID_API_LEVEL: 34
       ANDROID_TARGET: "playstore"
       ANDROID_ARCH: "x86_64"
-      ANDROID_PROFILE: "medium_phone"
+      ANDROID_PROFILE: "Galaxy Nexus"
       ANDROID_NUM_CPUS: 4
+      ANDROID_RAM_SIZE: 2048M
       ANDROID_EMULATOR_OPTIONS: "-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -dns-server 8.8.8.8 -netfast -camera-back none -no-metrics"
       AVD_NAME: "Nissan_Connect_Scraper_Avd"
       APP_ID: "com.aqsmartphone.android.nissan"
@@ -118,7 +119,7 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
             ~/.android/debug.keystore
-          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
+          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ runner.os }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -129,6 +130,7 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
           force-avd-creation: false
           emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
           disable-animations: false
@@ -148,5 +150,12 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
-          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
-          script: uv run main.py "${{ env.APK_PATH }}/${{ env.APP_ID }}@${{ inputs.android-app-version }}.apk" >> $GITHUB_OUTPUT
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          script: |
+            # Dump the log and then exit, Show the date, invocation time, priority, tag, and PID of the process issuing the message.
+            # adb logcat -dv time
+            adb shell ip addr show wlan0
+            adb shell ping -c 4 google.com
+            # uv run main.py "${{ env.APK_PATH }}/${{ env.APP_ID }}@${{ inputs.android-app-version }}.apk" >> $GITHUB_OUTPUT
