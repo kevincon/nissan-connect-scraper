@@ -4,12 +4,11 @@
 ![GitHub License](https://img.shields.io/github/license/kevincon/nissan-connect-scraper)
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/kevincon/nissan-connect-scraper/.github%2Fworkflows%2Fmainci.yml?branch=main)](https://github.com/kevincon/nissan-connect-scraper/actions/workflows/mainci.yml)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/kevincon/nissan-connect-scraper/main.svg)](https://results.pre-commit.ci/latest/github/kevincon/nissan-connect-scraper/main)
-[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/kevincon)
 
 > [!IMPORTANT]
 > The NissanConnect® Application Terms of Use (contained in the app itself, effective January 23, 2018) state (**emphasis** mine):
 >
-> The Sites, the App, or any of the content provided in the Site or the App, including, but not limited to, text, images, buttons, html code, audio and video, may not be copied, reverse engineered, reproduced, republished, uploaded, posted, transmitted or distributed without our prior written consent. You may not mirror any of the content from the Site on another website or in any other media. **You may, however, download, display, and/or print one copy of the Site or of the App, or a part thereof, for your personal, non-commercial use without modifying the content displayed from either the Site or the App, including all copyright, trademark, and other proprietary notices.**
+> > The Sites, the App, or any of the content provided in the Site or the App, including, but not limited to, text, images, buttons, html code, audio and video, may not be copied, reverse engineered, reproduced, republished, uploaded, posted, transmitted or distributed without our prior written consent. You may not mirror any of the content from the Site on another website or in any other media. **You may, however, download, display, and/or print one copy of the Site or of the App, or a part thereof, for your personal, non-commercial use without modifying the content displayed from either the Site or the App, including all copyright, trademark, and other proprietary notices.**
 >
 > This repo is for educational/demonstrative purposes. I have no affiliation with Nissan and neither I nor the software may be held liable for any consequences resulting from its use.
 

@@ -112,6 +112,7 @@ def main(
         deviceName="Android",
         language="en",
         locale="US",
+        autoGrantPermissions=True,
     )
     if avd:
         capabilities["appium:avd"] = avd
@@ -124,67 +125,74 @@ def main(
         ),
         appium_driver(appium_server_url, str(appium_server_port), capabilities) as driver,
     ):
-        driver.implicitly_wait(60)
+        try:
+            driver.implicitly_wait(60)
 
-        if not demo and user_id and password:
-            logger.info("Tapping sign in button...")
-            launch_sign_in_button = driver.find_element(by=AppiumBy.ID, value=LAUNCH_SIGN_IN_BUTTON)
-            launch_sign_in_button.click()
-            logger.info("Typing in provided username...")
-            user_id_text_field = driver.find_element(by=AppiumBy.ID, value=USER_ID_TEXT_FIELD_ELEMENT_ID)
-            user_id_text_field.send_keys(user_id)
-            logger.info("Typing in provided password...")
-            password_text_field = driver.find_element(by=AppiumBy.ID, value=PASSWORD_TEXT_FIELD_ELEMENT_ID)
-            password_text_field.send_keys(password)
-            logger.info("Tapping sign in button...")
-            submit_sign_in_button = driver.find_element(by=AppiumBy.ID, value=SUBMIT_SIGN_IN_BUTTON)
-            submit_sign_in_button.click()
-        else:
-            if not demo:
-                logger.warning("User ID or password missing, entering demo mode...")
-            logger.info("Tapping demo mode button...")
-            demo_mode_button = driver.find_element(by=AppiumBy.ID, value=ENTER_DEMO_MODE_BUTTON_ID)
-            demo_mode_button.click()
+            if not demo and user_id and password:
+                logger.info("Tapping sign in button...")
+                launch_sign_in_button = driver.find_element(by=AppiumBy.ID, value=LAUNCH_SIGN_IN_BUTTON)
+                launch_sign_in_button.click()
+                logger.info("Typing in provided username...")
+                user_id_text_field = driver.find_element(by=AppiumBy.ID, value=USER_ID_TEXT_FIELD_ELEMENT_ID)
+                user_id_text_field.send_keys(user_id)
+                logger.info("Typing in provided password...")
+                password_text_field = driver.find_element(by=AppiumBy.ID, value=PASSWORD_TEXT_FIELD_ELEMENT_ID)
+                password_text_field.send_keys(password)
+                logger.info("Tapping sign in button...")
+                submit_sign_in_button = driver.find_element(by=AppiumBy.ID, value=SUBMIT_SIGN_IN_BUTTON)
+                submit_sign_in_button.click()
+            else:
+                if not demo:
+                    logger.warning("User ID or password missing, entering demo mode...")
+                logger.info("Tapping demo mode button...")
+                demo_mode_button = driver.find_element(by=AppiumBy.ID, value=ENTER_DEMO_MODE_BUTTON_ID)
+                demo_mode_button.click()
 
-        for button_name, button_id in [
-            ("skip button", TV_SKIP_STEP_1_BUTTON_ID),
-            ("do not show again button", DO_NOT_SHOW_AGAIN_BUTTON_ID),
-        ]:
-            logger.info(f"Tapping {button_name}...")
-            button = driver.find_element(by=AppiumBy.ID, value=button_id)
-            button.click()
+            for button_name, button_id in [
+                ("skip button", TV_SKIP_STEP_1_BUTTON_ID),
+                ("do not show again button", DO_NOT_SHOW_AGAIN_BUTTON_ID),
+            ]:
+                logger.info(f"Tapping {button_name}...")
+                button = driver.find_element(by=AppiumBy.ID, value=button_id)
+                button.click()
 
-        refresh_status_timeout_seconds = 30
-        logger.info(f"Waiting up to {refresh_status_timeout_seconds} seconds for data refresh to complete...")
-        refresh_status_element = driver.find_element(by=AppiumBy.ID, value=REFRESH_STATUS_TEXT_ELEMENT_ID)
-        deadline = time.time() + refresh_status_timeout_seconds
-        while time.time() < deadline:
-            if refresh_status_element.text != "Please wait...":
-                break
-            time.sleep(1)
-        else:
-            raise TimeoutError(f"Timed out waiting for refresh after {refresh_status_timeout_seconds} seconds")
+            refresh_status_timeout_seconds = 30
+            logger.info(f"Waiting up to {refresh_status_timeout_seconds} seconds for data refresh to complete...")
+            refresh_status_element = driver.find_element(by=AppiumBy.ID, value=REFRESH_STATUS_TEXT_ELEMENT_ID)
+            deadline = time.time() + refresh_status_timeout_seconds
+            while time.time() < deadline:
+                if refresh_status_element.text != "Please wait...":
+                    break
+                time.sleep(1)
+            else:
+                raise TimeoutError(f"Timed out waiting for refresh after {refresh_status_timeout_seconds} seconds")
 
-        # e.g. "UPDATED MAR 05, 2025, 06:31 AM"
-        last_refresh_date = refresh_status_element.text.removeprefix("UPDATED").strip()
-        last_refresh_date = arrow.get(dateutil_parser().parse(last_refresh_date).astimezone(datetime.timezone.utc))
-        if convert_times_to_timezone:
-            last_refresh_date = last_refresh_date.to(convert_times_to_timezone)
+            # e.g. "UPDATED MAR 05, 2025, 06:31 AM"
+            last_refresh_date = refresh_status_element.text.removeprefix("UPDATED").strip()
+            last_refresh_date = arrow.get(dateutil_parser().parse(last_refresh_date).astimezone(datetime.timezone.utc))
+            if convert_times_to_timezone:
+                last_refresh_date = last_refresh_date.to(convert_times_to_timezone)
 
-        for key, value in VehicleData(
-            last_refresh_date=last_refresh_date.format("ddd hh:mm A"),
-            battery_state_of_charge=driver.find_element(
-                by=AppiumBy.ID, value=BATTERY_STATE_OF_CHARGE_TEXT_ELEMENT_ID
-            ).text,
-            charger_state=driver.find_element(by=AppiumBy.ID, value=CHARGER_STATE_TEXT_ELEMENT_ID).text,
-            range_minimum=driver.find_element(by=AppiumBy.ID, value=MILE_RANGE_MINIMUM_TEXT_ELEMENT_ID).text,
-            range_maximum=driver.find_element(by=AppiumBy.ID, value=MILE_RANGE_MAXIMUM_TEXT_ELEMENT_ID).text,
-            interior_temperature_range=driver.find_element(
-                by=AppiumBy.ID, value=INTERIOR_TEMPERATURE_TEXT_ELEMENT_ID
-            ).text,
-            level_two_charger_eta=driver.find_element(by=AppiumBy.ID, value=LEVEL_TWO_CHARGER_ETA_TEXT_ELEMENT_ID).text,
-        ).__dict__.items():
-            print(f"{key.replace('_', '-')}={value}")
+            for key, value in VehicleData(
+                last_refresh_date=last_refresh_date.format("ddd hh:mm A"),
+                battery_state_of_charge=driver.find_element(
+                    by=AppiumBy.ID, value=BATTERY_STATE_OF_CHARGE_TEXT_ELEMENT_ID
+                ).text,
+                charger_state=driver.find_element(by=AppiumBy.ID, value=CHARGER_STATE_TEXT_ELEMENT_ID).text,
+                range_minimum=driver.find_element(by=AppiumBy.ID, value=MILE_RANGE_MINIMUM_TEXT_ELEMENT_ID).text,
+                range_maximum=driver.find_element(by=AppiumBy.ID, value=MILE_RANGE_MAXIMUM_TEXT_ELEMENT_ID).text,
+                interior_temperature_range=driver.find_element(
+                    by=AppiumBy.ID, value=INTERIOR_TEMPERATURE_TEXT_ELEMENT_ID
+                ).text,
+                level_two_charger_eta=driver.find_element(
+                    by=AppiumBy.ID, value=LEVEL_TWO_CHARGER_ETA_TEXT_ELEMENT_ID
+                ).text,
+            ).__dict__.items():
+                print(f"{key.replace('_', '-')}={value}")
+        except Exception:
+            time.sleep(3)
+            driver.save_screenshot("last_screenshot.png")
+            raise
 
 
 if __name__ == "__main__":
