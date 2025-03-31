@@ -1,0 +1,115 @@
+name: Nisscan Connect Scraper
+description: "Run and scrape the NissanConnect® Android app on an Android device."
+author: Kevin Conley
+branding:
+  icon: battery-charging
+  color: blue
+inputs:
+  user-id:
+    description: 'NissanConnect® account user ID to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.'
+    required: false
+  password:
+    description: 'NissanConnect® account password to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.'
+    required: false
+  android-app-version:
+    description: "The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided."
+    required: false
+  convert-times-to-timezone:
+    description: 'The timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.'
+    required: false
+    default: "UTC"
+  set-up-only:
+    description: "Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs."
+    required: false
+    default: ""
+outputs:
+  last-refresh-date:
+    description: 'The last refresh date (e.g. "Fri 05:30 AM").'
+    value: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
+  battery-state-of-charge:
+    description: 'The state of charge of the battery (out of 100, e.g. "75").'
+    value: ${{ steps.run-and-scrape.outputs.battery-state-of-charge }}
+  charger-state:
+    description: 'The charger state (e.g. "UNPLUGGED...").'
+    value: ${{ steps.run-and-scrape.outputs.charger-state }}
+  range-minimum:
+    description: 'The minimum range in your account''s preferred units (e.g. "125" miles).'
+    value: ${{ steps.run-and-scrape.outputs.range-minimum }}
+  range-maximum:
+    description: 'The maximum range in your account''s preferred units (e.g. "129" miles).'
+    value: ${{ steps.run-and-scrape.outputs.range-maximum }}
+  interior-temperature-range:
+    description: 'The interior temperature range in your account''s preferred units (e.g. "74-84°F").'
+    value: ${{ steps.run-and-scrape.outputs.interior-temperature-range }}
+  level-two-charger-eta:
+    description: 'The level two charger ETA (e.g. "4h:30m").'
+    value: ${{ steps.run-and-scrape.outputs.level-two-charger-eta }}
+  command:
+    description: "A command to run to scrape the NissanConnect® Android app. This is only set if the input `set-up-only` is set to true."
+    value: ${{ inputs.set-up-only && steps.construct-scrape-command.outputs.command }}
+runs:
+  using: "composite"
+  steps:
+    - name: Set up environment variables
+      shell: bash
+      run: |
+        echo "APK_BASE_NAME=com.aqsmartphone.android.nissan${{ inputs.android-app-version && format('@{0}', inputs.android-app-version) }}" >> $GITHUB_ENV
+        echo "APK_FOLDER=${{ runner.temp }}/apk" >> $GITHUB_ENV
+        echo "COLUMNS=120" >> $GITHUB_ENV
+        echo "FORCE_COLOR=1" >> $GITHUB_ENV
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
+      env:
+        UV_LOCK_PATH: "${{ github.action_repository && github.action_path || '**' }}/uv.lock"
+      with:
+        version: "0.6.x"
+        enable-cache: true
+        prune-cache: ${{ runner.environment != 'self-hosted'}}
+        cache-dependency-glob: "${{ env.UV_LOCK_PATH }}"
+    - name: Set up node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.14.0
+    - name: Install node dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci
+    - name: Create APK folder
+      shell: bash
+      run: mkdir -p "${{ env.APK_FOLDER }}"
+    - name: Install apkeep
+      uses: jaxxstorm/action-install-gh-release@v1
+      with:
+        repo: EFForg/apkeep
+        tag: 0.17.0
+        extension-matching: disable
+        arch: x86_64-unknown-linux-gnu
+        platform: unknown-linux-gnu
+        rename-to: apkeep
+        chmod: 0755
+        cache: enable
+    - name: Check APK cache
+      if: inputs.android-app-version
+      uses: actions/cache@v4
+      id: apk-cache
+      with:
+        path: ${{ env.APK_FOLDER }}
+        key: apk-${{ env.APK_BASE_NAME }}
+    - name: Download APK for caching
+      if: steps.apk-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: apkeep --app "${{ env.APK_BASE_NAME }}" "${{ env.APK_FOLDER }}"
+    - name: Construct scrape command
+      shell: bash
+      id: construct-scrape-command
+      env:
+        NISSAN_CONNECT_USER_ID: ${{ inputs.user-id }}
+        NISSAN_CONNECT_PASSWORD: ${{ inputs.password }}
+        CONVERT_TIMES_TO_TIMEZONE: ${{ inputs.convert-times-to-timezone }}
+      run: |
+        echo 'command=env NISSAN_CONNECT_USER_ID="${{ env.NISSAN_CONNECT_USER_ID }}" NISSAN_CONNECT_PASSWORD="${{ env.NISSAN_CONNECT_PASSWORD }}" CONVERT_TIMES_TO_TIMEZONE="${{ env.CONVERT_TIMES_TO_TIMEZONE }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
+    - name: Run scrape command
+      if: ${{ !inputs.set-up-only }}
+      shell: bash
+      id: run-and-scrape
+      run: ${{ steps.construct-scrape-command.outputs.command }} >> $GITHUB_OUTPUT

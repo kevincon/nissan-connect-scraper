@@ -17,11 +17,11 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.11
+    rev: 0.6.13
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.2
+    rev: v0.11.4
     hooks:
       - id: ruff
         args: [--fix]
@@ -35,7 +35,7 @@ repos:
           # [[[cog
           # import subprocess
           # for package in subprocess.check_output(
-          #     ["uv", "export", "--quiet", "--no-hashes", "--no-header", "--format", "requirements-txt"],
+          #     ["uv", "export", "--quiet", "--no-hashes", "--no-header", "--no-annotate", "--format", "requirements-txt"],
           #     text=True
           # ).splitlines():
           #     print(f'- "{package}"')
@@ -100,6 +100,12 @@ repos:
     rev: 0.7.22
     hooks:
       - id: mdformat
+        additional_dependencies:
+          - mdformat-footnote
+          - mdformat-frontmatter
+          - mdformat-gfm
+          - mdformat-gfm-alerts
+          - mdformat-tables
   - repo: meta
     hooks:
       - id: check-hooks-apply
