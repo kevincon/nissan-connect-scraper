@@ -17,7 +17,7 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.6.9
+    rev: 0.6.11
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -27,7 +27,7 @@ repos:
         args: [--fix]
       - id: ruff-format
   - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.397
+    rev: v1.1.398
     hooks:
       - id: pyright
         additional_dependencies:
