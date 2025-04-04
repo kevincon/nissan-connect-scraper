@@ -21,7 +21,31 @@ jobs:
           extra_args: --all-files pyright
   scrape:
     name: Scrape demo
-    uses: ./.github/workflows/scraper.yml
+    runs-on: ubuntu-latest
+    outputs:
+      last-refresh-date: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
+      battery-state-of-charge: ${{ steps.run-and-scrape.outputs.battery-state-of-charge }}
+      charger-state: ${{ steps.run-and-scrape.outputs.charger-state }}
+      range-minimum: ${{ steps.run-and-scrape.outputs.range-minimum }}
+      range-maximum: ${{ steps.run-and-scrape.outputs.range-maximum }}
+      interior-temperature-range: ${{ steps.run-and-scrape.outputs.interior-temperature-range }}
+      level-two-charger-eta: ${{ steps.run-and-scrape.outputs.level-two-charger-eta }}
+    steps:
+      - name: Enable KVM group permissions for Android emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/checkout@v4
+      - name: Run Android emulator and scrape in demo mode
+        id: run-and-scrape
+        uses: ./
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: last_screenshot.png
+          path: last_screenshot.png
+          if-no-files-found: ignore
   test:
     name: Test
     runs-on: ubuntu-latest
