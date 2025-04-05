@@ -11,7 +11,7 @@ on:
         description: "The version of the NissanConnect® Android app to use."
         required: false
         type: string
-        default: 7.9.7
+        default: 8.0.0
       convert-times-to-timezone:
         description: "The timezone to convert times to, e.g. \"US/Pacific\""
         required: false
@@ -46,6 +46,18 @@ on:
       password:
         description: "NissanConnect® account password to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter \"demo mode\" instead of signing in."
         required: false
+      tailscale-oauth-client-id:
+        description: "Optional Tailscale OAuth client ID to use to authenticate an ephemeral node created for the GitHub runner."
+        required: false
+      tailscale-oauth-secret:
+        description: "Optional Tailscale OAuth secret to use to authenticate the ephemeral node created for the GitHub runner."
+        required: false
+      tailscale-tags:
+        description: "Optional comma-separated list of Tailscale tags to apply to the ephemeral node created for the GitHub runner."
+        required: false
+      tailscale-exit-node-name:
+        description: "Optional name of the Tailscale exit node to use."
+        required: false
 jobs:
   scrape:
     name: Scrape
@@ -56,12 +68,15 @@ jobs:
       ANDROID_ARCH: "x86_64"
       ANDROID_PROFILE: "medium_phone"
       ANDROID_NUM_CPUS: 4
+      ANDROID_RAM_SIZE: 2048M
       ANDROID_EMULATOR_OPTIONS: "-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -dns-server 8.8.8.8 -netfast -camera-back none -no-metrics"
       AVD_NAME: "Nissan_Connect_Scraper_Avd"
       APP_ID: "com.aqsmartphone.android.nissan"
       APK_PATH: "/tmp/apk"
       COLUMNS: 120
       FORCE_COLOR: 1
+      SHOULD_SETUP_TAILSCALE: "${{ secrets.tailscale-oauth-client-id && secrets.tailscale-oauth-secret }}"
+      SHOULD_SET_TAILSCALE_EXIT_NODE: "${{ secrets.tailscale-oauth-client-id && secrets.tailscale-oauth-secret && secrets.tailscale-exit-node-name }}"
     outputs:
       last-refresh-date: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
       battery-state-of-charge: ${{ steps.run-and-scrape.outputs.battery-state-of-charge }}
@@ -118,7 +133,7 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
             ~/.android/debug.keystore
-          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
+          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ runner.os }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -129,6 +144,7 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
           force-avd-creation: false
           emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
           disable-animations: false
@@ -148,5 +164,13 @@ jobs:
           arch: ${{ env.ANDROID_ARCH }}
           profile: ${{ env.ANDROID_PROFILE }}
           cores: ${{ env.ANDROID_NUM_CPUS }}
-          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save ${{ env.ANDROID_EMULATOR_OPTIONS}}
           script: uv run main.py "${{ env.APK_PATH }}/${{ env.APP_ID }}@${{ inputs.android-app-version }}.apk" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: last_screenshot.png
+          path: last_screenshot.png
+          if-no-files-found: ignore

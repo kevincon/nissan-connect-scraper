@@ -1,0 +1,91 @@
+version: 2.1
+orbs:
+  android: circleci/android@3.0.0
+  # github-cli: circleci/github-cli@2.7.0
+  node: circleci/node@7.1.0
+  python: circleci/python@3.0.0
+  tailscale: crowley-namespace/tailscale@1.0.0
+jobs:
+  test:
+    executor:
+      name: android/android_machine
+      resource_class: large
+      tag: 2024.11.1
+    environment:
+      ANDROID_VIRTUAL_DEVICE: Nissan_Connect_Scraper_Avd
+      ANDROID_APP_ID: com.aqsmartphone.android.nissan
+      ANDROID_APP_VERSION: 8.0.0
+      ANDROID_APP_APK_PATH: /tmp/apk
+      CONVERT_TIMES_TO_TIMEZONE: US/Pacific # UTC
+    steps:
+      - checkout
+      - python/install-packages:
+          args: uv
+          pip-dependency-file: ""
+          pkg-manager: pip
+          venv-cache: false
+      - node/install-packages
+      # - github-cli/install
+      #- run: gh release download -R EFForg/apkeep --pattern apkeep-x86_64-unknown-linux-gnu --output apkeep 0.17.0
+      - run: wget -O apkeep https://github.com/EFForg/apkeep/releases/download/0.17.0/apkeep-x86_64-unknown-linux-gnu
+      - run: chmod +x ./apkeep
+      - run: mkdir -p "${ANDROID_APP_APK_PATH}"
+      - run: ./apkeep --app "${ANDROID_APP_ID}@${ANDROID_APP_VERSION}" "${ANDROID_APP_APK_PATH}"
+      - android/create_avd:
+          avd_name: Nissan_Connect_Scraper_Avd
+          install: true
+          system_image: system-images;android-30;google_apis;x86_64
+      - tailscale/install
+      - run:
+          background: true
+          command: |
+            sudo systemctl stop tailscaled
+            sudo tailscaled --tun=userspace-networking --outbound-http-proxy-listen=localhost:1055 --socks5-server=localhost:1055
+          name: Run Tailscale agent
+      - run: sleep 3
+      - tailscale/connect:
+          tailscale-auth-key: TAILSCALE_AUTH_KEY # pragma: allowlist secret
+          tailscale-optional-flags: --accept-routes=true
+      - run: timeout 5m sudo -E tailscale set --exit-node=${TAILSCALE_EXIT_NODE_NAME} --exit-node-allow-lan-access=true
+      #       sudo tee ./proxychains.conf \<<EOF
+      #       # proxychains.conf
+      #       #
+      #       # This file is used to configure the proxychains daemon.
+      #       #
+      #       # See the proxychains.conf
+      #       # By default enable localnet for loopback address ranges
+      #       # RFC5735 Loopback address range
+      #       localnet 127.0.0.0/255.0.0.0
+      #       localnet ::1/128
+      #       [ProxyList]
+      #       socks5  127.0.0.1 1055
+      #       EOF
+      #     name: Write proxychains config file
+      - run:
+          background: true
+          command: |
+            #!/bin/bash
+            emulator -avd "Nissan_Connect_Scraper_Avd" -no-window -gpu auto -noaudio -no-boot-anim -netfast -camera-back none -no-metrics -memory 8192 -http-proxy 127.0.0.1:1055 -debug-proxy
+          # - run:
+          #     command: |
+          #       sudo apt update
+          #       sudo apt install -y proxychains4
+          #     name: Install proxychains
+          # - run:
+          #     command: |
+          #       #!/bin/bash
+      - android/wait_for_emulator
+      - run:
+          background: true
+          command: adb logcat
+          name: Logcat
+      - android/disable_animations
+      - run: sleep 30
+      - android/run_tests:
+          test_command: uv run main.py ${ANDROID_APP_APK_PATH}/${ANDROID_APP_ID}@${ANDROID_APP_VERSION}.apk
+      - store_artifacts:
+          path: last_screenshot.png
+workflows:
+  test:
+    jobs:
+      - test
