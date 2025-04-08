@@ -189,8 +189,8 @@ def main(
                 last_refresh_date = last_refresh_date.to(convert_times_to_timezone)
 
             for key, value in VehicleData(
-                # e.g. "Mon, Apr 7, 8:03 PM"
-                last_refresh_date=last_refresh_date.format("ddd, MMM D, h:mm A"),
+                # e.g. "Mon Apr 7, 8:03 PM"
+                last_refresh_date=last_refresh_date.format("ddd MMM D, h:mm A"),
                 battery_state_of_charge=driver.find_element(
                     by=AppiumBy.ID, value=BATTERY_STATE_OF_CHARGE_TEXT_ELEMENT_ID
                 ).text,
