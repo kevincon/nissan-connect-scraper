@@ -15,8 +15,46 @@ jobs:
       pull-requests: read
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: rymndhng/release-on-push-action@v0.28.0
+        id: release
         with:
           bump_version_scheme: patch
           use_github_release_notes: true
+  # Adapted from https://github.com/astral-sh/setup-uv/blob/9e2c33a08245c3c948a6359a66dee8ba3641bf50/.github/workflows/update-major-minor-tags.yml
+  update_major_minor_tags:
+    name: Make sure major and minor tags are up to date on a patch release
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag_name }}
+      - name: Update Major Minor Tags
+        run: |
+          set -x
+
+          cd "${GITHUB_WORKSPACE}" || exit
+
+          # Set up variables.
+          TAG="${{ needs.release.outputs.tag_name }}" # v1.2.3
+          MINOR="${TAG%.*}"              # v1.2
+          MAJOR="${MINOR%.*}"            # v1
+
+          MESSAGE="Release ${TAG}"
+
+          # Set up Git.
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+          # Update MAJOR/MINOR tag
+          git tag -fa "${MAJOR}" -m "${MESSAGE}"
+          git tag -fa "${MINOR}" -m "${MESSAGE}"
+
+          # Push
+          git push --force origin "${MINOR}"
+          git push --force origin "${MAJOR}"
