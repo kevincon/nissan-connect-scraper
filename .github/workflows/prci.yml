@@ -21,7 +21,85 @@ jobs:
           extra_args: --all-files pyright
   scrape:
     name: Scrape demo
-    uses: ./.github/workflows/scraper.yml
+    runs-on: ubuntu-latest
+    outputs:
+      last-refresh-date: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
+      battery-state-of-charge: ${{ steps.run-and-scrape.outputs.battery-state-of-charge }}
+      charger-state: ${{ steps.run-and-scrape.outputs.charger-state }}
+      range-minimum: ${{ steps.run-and-scrape.outputs.range-minimum }}
+      range-maximum: ${{ steps.run-and-scrape.outputs.range-maximum }}
+      interior-temperature-range: ${{ steps.run-and-scrape.outputs.interior-temperature-range }}
+      level-two-charger-eta: ${{ steps.run-and-scrape.outputs.level-two-charger-eta }}
+    env:
+      ANDROID_API_LEVEL: 35
+      ANDROID_TARGET: playstore
+      ANDROID_ARCH: x86_64
+      ANDROID_PROFILE: medium_phone
+      ANDROID_NUM_CPUS: 4
+      ANDROID_RAM_SIZE: 2048M
+      ANDROID_EMULATOR_OPTIONS: "-no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-metrics"
+      AVD_NAME: Nissan_Connect_Scraper_Avd
+    steps:
+      - name: Enable KVM group permissions for Android emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/checkout@v4
+      - name: Set up scraper
+        id: scraper
+        uses: ./
+        with:
+          set-up-only: true
+      - name: Check AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+            ~/.android/debug.keystore
+          key: avd-${{ env.ANDROID_API_LEVEL }}-${{ runner.os }}-${{ env.ANDROID_TARGET }}-${{ env.ANDROID_PROFILE }}-${{ env.ANDROID_ARCH }}
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          avd-name: ${{ env.AVD_NAME }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: ${{ env.ANDROID_PROFILE }}
+          cores: ${{ env.ANDROID_NUM_CPUS }}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
+          force-avd-creation: false
+          emulator-options: ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+      - name: Run and scrape Nissan Connect
+        id: run-and-scrape
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          ANDROID_VIRTUAL_DEVICE: ${{ env.AVD_NAME }}
+          COLUMNS: 120
+          FORCE_COLOR: 1
+        with:
+          api-level: ${{ env.ANDROID_API_LEVEL }}
+          avd-name: ${{ env.AVD_NAME }}
+          target: ${{ env.ANDROID_TARGET }}
+          arch: ${{ env.ANDROID_ARCH }}
+          profile: ${{ env.ANDROID_PROFILE }}
+          cores: ${{ env.ANDROID_NUM_CPUS }}
+          ram-size: ${{ env.ANDROID_RAM_SIZE }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save ${{ env.ANDROID_EMULATOR_OPTIONS}}
+          script: |
+            ${{ steps.scraper.outputs.command }} >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: last_screenshot.png
+          path: last_screenshot.png
+          if-no-files-found: ignore
   test:
     name: Test
     runs-on: ubuntu-latest

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "devDependencies": {
+    "action-docs": "^2.5.1",
     "appium": "^2.16.2",
     "appium-uiautomator2-driver": "^4.1.0"
   }
