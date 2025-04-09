@@ -116,11 +116,15 @@ def main(
             envvar="NISSAN_CONNECT_APP_APK",
         ),
     ],
-    user_id: Annotated[str | None, typer.Option(help="user ID", envvar="NISSAN_CONNECT_USER_ID")] = None,
-    password: Annotated[str | None, typer.Option(help="password", envvar="NISSAN_CONNECT_PASSWORD")] = None,
+    user_id: Annotated[str | None, typer.Option(help="User ID", envvar="NISSAN_CONNECT_USER_ID")] = None,
+    password: Annotated[str | None, typer.Option(help="Password", envvar="NISSAN_CONNECT_PASSWORD")] = None,
     demo: Annotated[bool, typer.Option(help="Use demo mode", envvar="NISSAN_CONNECT_DEMO")] = False,
-    appium_server_url: Annotated[str, typer.Option(help="Appium server URL", envvar="APPIUM_SERVER_URL")] = "localhost",
-    appium_server_port: Annotated[int, typer.Option(help="Appium server port", envvar="APPIUM_SERVER_PORT")] = 4723,
+    appium_server_address: Annotated[
+        str, typer.Option(help="Address to start Appium server on", envvar="APPIUM_SERVER_ADDRESS")
+    ] = "localhost",
+    appium_server_port: Annotated[
+        int, typer.Option(help="Port to start Appium server on", envvar="APPIUM_SERVER_PORT")
+    ] = 4723,
     avd: Annotated[
         str | None,
         typer.Option(help="Android Virtual Device name", envvar="ANDROID_VIRTUAL_DEVICE"),
@@ -129,7 +133,19 @@ def main(
         str | None,
         typer.Option(help="Convert times to timezone (e.g. 'US/Pacific')", envvar="CONVERT_TIMES_TO_TIMEZONE"),
     ] = None,
-):
+    debug_out: Annotated[
+        Path | None,
+        typer.Option(
+            file_okay=False,
+            dir_okay=True,
+            help="Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.",
+            envvar="DEBUG_OUT",
+        ),
+    ] = None,
+) -> None:
+    if debug_out and not debug_out.exists():
+        debug_out.mkdir(parents=True, exist_ok=True)
+
     capabilities = dict(
         platformName="Android",
         automationName="uiautomator2",
@@ -145,10 +161,10 @@ def main(
 
     with (
         appium_service(
-            args=["--address", appium_server_url, "-p", str(appium_server_port)],
+            args=["--address", appium_server_address, "-p", str(appium_server_port)],
             timeout_ms=10000,
         ),
-        appium_driver(appium_server_url, str(appium_server_port), capabilities) as driver,
+        appium_driver(appium_server_address, str(appium_server_port), capabilities) as driver,
     ):
         try:
             driver.implicitly_wait(60)
@@ -171,7 +187,7 @@ def main(
                 driver.activate_app(ANDROID_APP_ID)
                 navigate_to_vehicle_screen_from_logged_out(driver, demo, user_id, password)
 
-            refresh_status_timeout_seconds = 30
+            refresh_status_timeout_seconds = 90
             logger.info(f"Waiting up to {refresh_status_timeout_seconds} seconds for data refresh to complete...")
             refresh_status_element = driver.find_element(by=AppiumBy.ID, value=REFRESH_STATUS_TEXT_ELEMENT_ID)
             deadline = time.time() + refresh_status_timeout_seconds
@@ -206,8 +222,10 @@ def main(
             ).__dict__.items():
                 print(f"{key.replace('_', '-')}={value}")
         except Exception:
-            time.sleep(3)
-            driver.save_screenshot("last_screenshot.png")
+            if debug_out:
+                # Wait a moment for any animation to finish
+                time.sleep(1)
+                driver.save_screenshot(debug_out / "last_screenshot.png")
             raise
 
 
