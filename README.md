@@ -30,6 +30,7 @@ For an example of a repo that uses this action, see https://github.com/kevincon/
 | `password`                  | <p>NissanConnect® account password to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>       | `false`  | `""`    |
 | `android-app-version`       | <p>The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided.</p>                                         | `false`  | `""`    |
 | `convert-times-to-timezone` | <p>The timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List<em>of</em>tz<em>database</em>time_zones.</p> | `false`  | `UTC`   |
+| `debug-out`                 | <p>Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.</p>                                                                    | `false`  | `""`    |
 | `set-up-only`               | <p>Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs.</p>                                                                                    | `false`  | `""`    |
 
 <!-- action-docs-inputs source="action.yml" -->
@@ -81,6 +82,12 @@ For an example of a repo that uses this action, see https://github.com/kevincon/
     #
     # Required: false
     # Default: UTC
+
+    debug-out:
+    # Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.
+    #
+    # Required: false
+    # Default: ""
 
     set-up-only:
     # Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs.

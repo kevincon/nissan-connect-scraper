@@ -43,12 +43,18 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # The `runner` context is not available in the job-level `env` directive so we set up this variable here instead
+      - name: Set up debug output directory variable
+        run: echo "DEBUG_OUTPUT_FOLDER=${{ runner.temp }}/debug" >> $GITHUB_ENV
       - uses: actions/checkout@v4
       - name: Set up scraper
         id: scraper
         uses: ./
+        env:
+          DEBUG_OUTPUT_FOLDER: ${{ env.DEBUG_OUTPUT_FOLDER }}
         with:
           set-up-only: true
+          debug-out: ${{ env.DEBUG_OUTPUT_FOLDER }}
       - name: Check AVD cache
         uses: actions/cache@v4
         id: avd-cache
@@ -94,9 +100,11 @@ jobs:
             ${{ steps.scraper.outputs.command }} >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         if: failure()
+        env:
+          DEBUG_OUTPUT_FOLDER: ${{ env.DEBUG_OUTPUT_FOLDER }}
         with:
-          name: last_screenshot.png
-          path: last_screenshot.png
+          name: debug-output
+          path: ${{ env.DEBUG_OUTPUT_FOLDER }}
           if-no-files-found: ignore
   test:
     name: Test

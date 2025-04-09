@@ -1,0 +1,9 @@
+pull_request_rules:
+  - name: Automatic merge for pre-commit ci updates
+    description: Merge pre-commit ci autoupdate PR if it passes all branch protection
+    conditions:
+      - author=pre-commit-ci[bot]
+      - title=[pre-commit.ci] pre-commit autoupdate
+    actions:
+      merge:
+        method: merge

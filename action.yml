@@ -18,6 +18,9 @@ inputs:
     description: 'The timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.'
     required: false
     default: "UTC"
+  debug-out:
+    description: "Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist."
+    required: false
   set-up-only:
     description: "Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs."
     required: false
@@ -64,8 +67,9 @@ runs:
       with:
         version: "0.6.x"
         enable-cache: true
-        prune-cache: ${{ runner.environment != 'self-hosted'}}
+        prune-cache: ${{ runner.environment != 'self-hosted' }}
         cache-dependency-glob: "${{ env.UV_LOCK_PATH }}"
+        ignore-empty-workdir: true
     - name: Set up node
       uses: actions/setup-node@v4
       with:
@@ -102,12 +106,8 @@ runs:
     - name: Construct scrape command
       shell: bash
       id: construct-scrape-command
-      env:
-        NISSAN_CONNECT_USER_ID: ${{ inputs.user-id }}
-        NISSAN_CONNECT_PASSWORD: ${{ inputs.password }}
-        CONVERT_TIMES_TO_TIMEZONE: ${{ inputs.convert-times-to-timezone }}
       run: |
-        echo 'command=env NISSAN_CONNECT_USER_ID="${{ env.NISSAN_CONNECT_USER_ID }}" NISSAN_CONNECT_PASSWORD="${{ env.NISSAN_CONNECT_PASSWORD }}" CONVERT_TIMES_TO_TIMEZONE="${{ env.CONVERT_TIMES_TO_TIMEZONE }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
+        echo 'command=env NISSAN_CONNECT_USER_ID="${{ inputs.user-id }}" NISSAN_CONNECT_PASSWORD="${{ inputs.password }}" CONVERT_TIMES_TO_TIMEZONE="${{ inputs.convert-times-to-timezone }}" DEBUG_OUT="${{ inputs.debug-out }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
     - name: Run scrape command
       if: ${{ !inputs.set-up-only }}
       shell: bash
