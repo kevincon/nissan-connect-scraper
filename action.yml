@@ -14,10 +14,13 @@ inputs:
   android-app-version:
     description: "The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided."
     required: false
-  convert-times-to-timezone:
-    description: 'The timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.'
+  last-refresh-date-format:
+    description: "The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens."
     required: false
-    default: "UTC"
+    default: "MMM DD, YYYY, hh:mm A"
+  convert-times-to-timezone:
+    description: 'A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.'
+    required: false
   debug-out:
     description: "Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist."
     required: false
@@ -27,7 +30,7 @@ inputs:
     default: ""
 outputs:
   last-refresh-date:
-    description: 'The last refresh date (e.g. "Fri 05:30 AM").'
+    description: 'The last refresh date (e.g. "MAR 05, 2025, 06:31 AM"). The format of this string can be customized using the `last-refresh-date-format` input option.'
     value: ${{ steps.run-and-scrape.outputs.last-refresh-date }}
   battery-state-of-charge:
     description: 'The state of charge of the battery (out of 100, e.g. "75").'
