@@ -24,15 +24,15 @@ For an example of a repo that uses this action, see https://github.com/kevincon/
 
 ## Inputs
 
-| name                        | description                                                                                                                                                                                            | required | default                 |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | ----------------------- |
-| `user-id`                   | <p>NissanConnect® account user ID to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>      | `false`  | `""`                    |
-| `password`                  | <p>NissanConnect® account password to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>     | `false`  | `""`                    |
-| `android-app-version`       | <p>The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided.</p>                                       | `false`  | `""`                    |
-| `last-refresh-date-format`  | <p>The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens.</p>                                                        | `false`  | `MMM DD, YYYY, hh:mm A` |
-| `convert-times-to-timezone` | <p>A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List<em>of</em>tz<em>database</em>time_zones.</p> | `false`  | `""`                    |
-| `debug-out`                 | <p>Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.</p>                                                                  | `false`  | `""`                    |
-| `set-up-only`               | <p>Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs.</p>                                                                                  | `false`  | `""`                    |
+| name                        | description                                                                                                                                                                                                                                                         | required | default                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------- |
+| `user-id`                   | <p>NissanConnect® account user ID to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>                                                                   | `false`  | `""`                    |
+| `password`                  | <p>NissanConnect® account password to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>                                                                  | `false`  | `""`                    |
+| `android-app-version`       | <p>The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided.</p>                                                                                                    | `false`  | `""`                    |
+| `last-refresh-date-format`  | <p>The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens.</p>                                                                                                                     | `false`  | `MMM DD, YYYY, hh:mm A` |
+| `convert-times-to-timezone` | <p>A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a>.</p> | `false`  | `""`                    |
+| `debug-out`                 | <p>Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.</p>                                                                                                                               | `false`  | `""`                    |
+| `set-up-only`               | <p>Set up the environment only, do not scrape, and include the command that can be executed to scrape in outputs.</p>                                                                                                                                               | `false`  | `""`                    |
 
 <!-- action-docs-inputs source="action.yml" -->
 
@@ -85,7 +85,7 @@ For an example of a repo that uses this action, see https://github.com/kevincon/
     # Default: MMM DD, YYYY, hh:mm A
 
     convert-times-to-timezone:
-    # A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
+    # A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>.
     #
     # Required: false
     # Default: ""

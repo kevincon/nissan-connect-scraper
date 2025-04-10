@@ -19,7 +19,7 @@ inputs:
     required: false
     default: "MMM DD, YYYY, hh:mm A"
   convert-times-to-timezone:
-    description: 'A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.'
+    description: 'A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>.'
     required: false
   debug-out:
     description: "Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist."
