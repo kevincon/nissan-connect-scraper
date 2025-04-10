@@ -110,7 +110,7 @@ runs:
       shell: bash
       id: construct-scrape-command
       run: |
-        echo 'command=env NISSAN_CONNECT_USER_ID="${{ inputs.user-id }}" NISSAN_CONNECT_PASSWORD="${{ inputs.password }}" CONVERT_TIMES_TO_TIMEZONE="${{ inputs.convert-times-to-timezone }}" DEBUG_OUT="${{ inputs.debug-out }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
+        echo 'command=env NISSAN_CONNECT_USER_ID="${{ inputs.user-id }}" NISSAN_CONNECT_PASSWORD="${{ inputs.password }}" CONVERT_TIMES_TO_TIMEZONE="${{ inputs.convert-times-to-timezone }}" LAST_REFRESH_DATE_FORMAT="${{ inputs.last-refresh-date-format }}" DEBUG_OUT="${{ inputs.debug-out }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
     - name: Run scrape command
       if: ${{ !inputs.set-up-only }}
       shell: bash
