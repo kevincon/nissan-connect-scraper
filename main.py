@@ -1,10 +1,9 @@
-import datetime
 import logging
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import arrow
 import typer
@@ -129,9 +128,19 @@ def main(
         str | None,
         typer.Option(help="Android Virtual Device name", envvar="ANDROID_VIRTUAL_DEVICE"),
     ] = None,
+    last_refresh_date_format: Annotated[
+        str,
+        typer.Option(
+            help="Format string for last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens.",
+            envvar="LAST_REFRESH_DATE_FORMAT",
+        ),
+    ] = "MMM DD, YYYY, hh:mm A",
     convert_times_to_timezone: Annotated[
         str | None,
-        typer.Option(help="Convert times to timezone (e.g. 'US/Pacific')", envvar="CONVERT_TIMES_TO_TIMEZONE"),
+        typer.Option(
+            help="Convert times to timezone (e.g. 'US/Pacific'). See the 'TZ identifier' column on this page for accepted values: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.",
+            envvar="CONVERT_TIMES_TO_TIMEZONE",
+        ),
     ] = None,
     debug_out: Annotated[
         Path | None,
@@ -161,7 +170,7 @@ def main(
 
     with (
         appium_service(
-            args=["--address", appium_server_address, "-p", str(appium_server_port)],
+            args=["--address", appium_server_address, "-p", str(appium_server_port), "--allow-insecure=adb_shell"],
             timeout_ms=10000,
         ),
         appium_driver(appium_server_address, str(appium_server_port), capabilities) as driver,
@@ -199,14 +208,20 @@ def main(
                 raise TimeoutError(f"Timed out waiting for refresh after {refresh_status_timeout_seconds} seconds")
 
             # e.g. "UPDATED MAR 05, 2025, 06:31 AM"
-            last_refresh_date = refresh_status_element.text.removeprefix("UPDATED").strip()
-            last_refresh_date = arrow.get(dateutil_parser().parse(last_refresh_date).astimezone(datetime.timezone.utc))
+            last_refresh_date_raw = refresh_status_element.text.removeprefix("UPDATED").strip()
+            last_refresh_date = arrow.get(dateutil_parser().parse(last_refresh_date_raw))
+
+            android_device_timezone = cast(
+                str, driver.execute_script("mobile: shell", {"command": "getprop", "args": ["persist.sys.timezone"]})
+            ).strip()
+            android_device_tzinfo = arrow.now(android_device_timezone).tzinfo
+            last_refresh_date = last_refresh_date.replace(tzinfo=android_device_tzinfo)
+
             if convert_times_to_timezone:
                 last_refresh_date = last_refresh_date.to(convert_times_to_timezone)
 
             for key, value in VehicleData(
-                # e.g. "Mon Apr 7, 8:03 PM"
-                last_refresh_date=last_refresh_date.format("ddd MMM D, h:mm A"),
+                last_refresh_date=last_refresh_date.format(last_refresh_date_format),
                 battery_state_of_charge=driver.find_element(
                     by=AppiumBy.ID, value=BATTERY_STATE_OF_CHARGE_TEXT_ELEMENT_ID
                 ).text,
