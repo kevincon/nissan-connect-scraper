@@ -20,6 +20,8 @@ This repo contains a [reusable GitHub Action](https://docs.github.com/en/actions
 
 For an example of a repo that uses this action, see https://github.com/kevincon/nissan-leaf-widget-updater.
 
+See [this blog post](https://kevintechnology.com/posts/leaf-widget/) for more information.
+
 <!-- action-docs-inputs source="action.yml" -->
 
 ## Inputs
