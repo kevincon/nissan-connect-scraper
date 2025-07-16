@@ -5,6 +5,12 @@ branding:
   icon: battery-charging
   color: blue
 inputs:
+  google-play-email:
+    description: "A Google Play Store account email address to use to download the NissanConnect® Android app."
+    required: true
+  google-play-token:
+    description: "A Google Play Store account token to use to download the NissanConnect® Android app. See https://github.com/EFForg/apkeep/blob/master/USAGE-google-play.md for instructions on how to obtain this 'AAS token'."
+    required: true
   user-id:
     description: 'NissanConnect® account user ID to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.'
     required: false
@@ -105,7 +111,7 @@ runs:
     - name: Download APK for caching
       if: steps.apk-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: apkeep --app "${{ env.APK_BASE_NAME }}" "${{ env.APK_FOLDER }}"
+      run: apkeep --app "${{ env.APK_BASE_NAME }}" --download-source "google-play" --accept-tos --email "${{ inputs.google-play-email }}" --aas-token "${{ inputs.google-play-token }}" "${{ env.APK_FOLDER }}"
     - name: Construct scrape command
       shell: bash
       id: construct-scrape-command

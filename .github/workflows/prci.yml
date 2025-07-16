@@ -54,6 +54,8 @@ jobs:
           DEBUG_OUTPUT_FOLDER: ${{ env.DEBUG_OUTPUT_FOLDER }}
         with:
           set-up-only: true
+          google-play-email: ${{ secrets.GOOGLE_PLAY_EMAIL }}
+          google-play-token: ${{ secrets.GOOGLE_PLAY_TOKEN }}
           debug-out: ${{ env.DEBUG_OUTPUT_FOLDER }}
       - name: Check AVD cache
         uses: actions/cache@v4
