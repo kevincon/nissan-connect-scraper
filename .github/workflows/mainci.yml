@@ -6,6 +6,7 @@ on:
 jobs:
   prci:
     uses: ./.github/workflows/prci.yml
+    secrets: inherit # pragma: allowlist secret
   release:
     name: Release
     runs-on: ubuntu-latest
