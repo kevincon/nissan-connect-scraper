@@ -17,7 +17,7 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.9.18
+    rev: 0.9.21
     hooks:
       - id: uv-lock
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -85,7 +85,7 @@ repos:
           - "wsproto==1.2.0"
           # [[[end]]]
   - repo: https://github.com/google/yamlfmt
-    rev: v0.20.0
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
   - repo: https://github.com/adrienverge/yamllint
