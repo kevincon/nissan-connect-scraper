@@ -108,6 +108,7 @@ jobs:
           name: debug-output
           path: ${{ env.DEBUG_OUTPUT_FOLDER }}
           if-no-files-found: ignore
+          retention-days: 1
   test:
     name: Test
     runs-on: ubuntu-latest

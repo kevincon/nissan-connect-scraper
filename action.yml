@@ -17,9 +17,6 @@ inputs:
   password:
     description: 'NissanConnect® account password to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.'
     required: false
-  android-app-version:
-    description: "The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided."
-    required: false
   last-refresh-date-format:
     description: "The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens."
     required: false
@@ -65,7 +62,7 @@ runs:
     - name: Set up environment variables
       shell: bash
       run: |
-        echo "APK_BASE_NAME=com.aqsmartphone.android.nissan${{ inputs.android-app-version && format('@{0}', inputs.android-app-version) }}" >> $GITHUB_ENV
+        echo "APK_BASE_NAME=com.aqsmartphone.android.nissan" >> $GITHUB_ENV
         echo "APK_FOLDER=${{ runner.temp }}/apk" >> $GITHUB_ENV
         echo "COLUMNS=120" >> $GITHUB_ENV
         echo "FORCE_COLOR=1" >> $GITHUB_ENV
@@ -94,7 +91,7 @@ runs:
       uses: jaxxstorm/action-install-gh-release@v1
       with:
         repo: EFForg/apkeep
-        tag: 0.17.0
+        tag: 0.18.0
         extension-matching: disable
         arch: x86_64-unknown-linux-gnu
         platform: unknown-linux-gnu
@@ -108,15 +105,15 @@ runs:
       with:
         path: ${{ env.APK_FOLDER }}
         key: apk-${{ env.APK_BASE_NAME }}
-    - name: Download APK for caching
+    - name: Download APKs for caching
       if: steps.apk-cache.outputs.cache-hit != 'true'
       shell: bash
-      run: apkeep --app "${{ env.APK_BASE_NAME }}" --download-source "google-play" --accept-tos --email "${{ inputs.google-play-email }}" --aas-token "${{ inputs.google-play-token }}" "${{ env.APK_FOLDER }}"
+      run: apkeep --app "${{ env.APK_BASE_NAME }}" --download-source "google-play" --options split_apk=true --accept-tos --email "${{ inputs.google-play-email }}" --aas-token "${{ inputs.google-play-token }}" "${{ env.APK_FOLDER }}"
     - name: Construct scrape command
       shell: bash
       id: construct-scrape-command
       run: |
-        echo 'command=env NISSAN_CONNECT_USER_ID="${{ inputs.user-id }}" NISSAN_CONNECT_PASSWORD="${{ inputs.password }}" CONVERT_TIMES_TO_TIMEZONE="${{ inputs.convert-times-to-timezone }}" LAST_REFRESH_DATE_FORMAT="${{ inputs.last-refresh-date-format }}" DEBUG_OUT="${{ inputs.debug-out }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}.apk"' >> $GITHUB_OUTPUT
+        echo 'command=env NISSAN_CONNECT_USER_ID="${{ inputs.user-id }}" NISSAN_CONNECT_PASSWORD="${{ inputs.password }}" CONVERT_TIMES_TO_TIMEZONE="${{ inputs.convert-times-to-timezone }}" LAST_REFRESH_DATE_FORMAT="${{ inputs.last-refresh-date-format }}" DEBUG_OUT="${{ inputs.debug-out }}" uv run --directory="${{ github.action_path }}" main.py "${{ env.APK_FOLDER }}/${{ env.APK_BASE_NAME }}"' >> $GITHUB_OUTPUT
     - name: Run scrape command
       if: ${{ !inputs.set-up-only }}
       shell: bash

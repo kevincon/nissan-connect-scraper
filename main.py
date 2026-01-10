@@ -1,3 +1,4 @@
+import base64
 import logging
 import time
 from contextlib import contextmanager
@@ -104,15 +105,15 @@ def navigate_to_vehicle_screen_from_logged_out(driver, demo, user_id, password):
 
 @app.command(no_args_is_help=True)
 def main(
-    nissan_connect_app_apk: Annotated[
+    nissan_connect_app_apk_folder: Annotated[
         Path,
         typer.Argument(
             resolve_path=True,
-            file_okay=True,
-            dir_okay=False,
+            file_okay=False,
+            dir_okay=True,
             exists=True,
-            help="Path to Nissan Connect app APK",
-            envvar="NISSAN_CONNECT_APP_APK",
+            help="Path to folder containing Nissan Connect app APK(s)",
+            envvar="NISSAN_CONNECT_APP_APK_FOLDER",
         ),
     ],
     user_id: Annotated[str | None, typer.Option(help="User ID", envvar="NISSAN_CONNECT_USER_ID")] = None,
@@ -155,28 +156,60 @@ def main(
     if debug_out and not debug_out.exists():
         debug_out.mkdir(parents=True, exist_ok=True)
 
+    debug_file_prefix = arrow.now().format("YYYY-MM-DD_HH-mm-ss")
+
     capabilities = dict(
         platformName="Android",
         automationName="uiautomator2",
         deviceName="Android",
         language="en",
         locale="US",
-        autoGrantPermissions=True,
         uiautomator2ServerInstallTimeout=120000,
+        **{"appium:adbExecTimeout": 30000},
     )
     if avd:
         capabilities["appium:avd"] = avd
-    capabilities["appium:app"] = str(nissan_connect_app_apk)
+
+    appium_service_args = [
+        "--address",
+        appium_server_address,
+        "-p",
+        str(appium_server_port),
+        "--allow-insecure=adb_shell",
+    ]
+    if debug_out:
+        appium_service_args += ["--log", str(debug_out / f"{debug_file_prefix}_appium.log"), "--log-level=debug"]
 
     with (
         appium_service(
-            args=["--address", appium_server_address, "-p", str(appium_server_port), "--allow-insecure=adb_shell"],
+            args=appium_service_args,
             timeout_ms=10000,
         ),
         appium_driver(appium_server_address, str(appium_server_port), capabilities) as driver,
     ):
         try:
+            # Set a sticky timeout, only has to be done once per session
             driver.implicitly_wait(60)
+
+            if debug_out:
+                bitrate_kbps = 1000
+                driver.start_recording_screen(bugReport=True, bitRate=bitrate_kbps * 1000)
+
+            logger.info("Uninstalling any existing app...")
+            driver.terminate_app(ANDROID_APP_ID)
+            driver.remove_app(ANDROID_APP_ID)
+
+            logger.info("Installing app...")
+            driver.execute_script(
+                "mobile: installMultipleApks",
+                {
+                    "apks": list(map(str, nissan_connect_app_apk_folder.glob("*.apk"))),
+                    "options": {"grantPermissions": True},
+                },
+            )
+
+            logger.info("Launching app...")
+            driver.activate_app(ANDROID_APP_ID)
 
             navigate_to_vehicle_screen_from_logged_out(driver, demo, user_id, password)
 
@@ -236,12 +269,14 @@ def main(
                 ).text,
             ).__dict__.items():
                 print(f"{key.replace('_', '-')}={value}")
-        except Exception:
+        finally:
             if debug_out:
                 # Wait a moment for any animation to finish
                 time.sleep(1)
-                driver.save_screenshot(debug_out / "last_screenshot.png")
-            raise
+
+                screen_recording_b64_data = driver.stop_recording_screen()
+                with (debug_out / f"{debug_file_prefix}_screen_recording.mp4").open("wb") as screen_recording_file:
+                    screen_recording_file.write(base64.b64decode(screen_recording_b64_data))
 
 
 if __name__ == "__main__":

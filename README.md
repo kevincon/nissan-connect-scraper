@@ -28,9 +28,10 @@ See [this blog post](https://kevintechnology.com/posts/leaf-widget/) for more in
 
 | name                        | description                                                                                                                                                                                                                                                         | required | default                 |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------- |
+| `google-play-email`         | <p>A Google Play Store account email address to use to download the NissanConnect® Android app.</p>                                                                                                                                                                 | `true`   | `""`                    |
+| `google-play-token`         | <p>A Google Play Store account token to use to download the NissanConnect® Android app. See https://github.com/EFForg/apkeep/blob/master/USAGE-google-play.md for instructions on how to obtain this 'AAS token'.</p>                                               | `true`   | `""`                    |
 | `user-id`                   | <p>NissanConnect® account user ID to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>                                                                   | `false`  | `""`                    |
 | `password`                  | <p>NissanConnect® account password to use to sign into the app. If either <code>user-id</code> or <code>password</code> is not provided, the app will enter "demo mode" instead of signing in.</p>                                                                  | `false`  | `""`                    |
-| `android-app-version`       | <p>The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided.</p>                                                                                                    | `false`  | `""`                    |
 | `last-refresh-date-format`  | <p>The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens.</p>                                                                                                                     | `false`  | `MMM DD, YYYY, hh:mm A` |
 | `convert-times-to-timezone` | <p>A timezone to convert times to, e.g. "US/Pacific". See the "TZ identifier" column on this page for accepted values: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a>.</p> | `false`  | `""`                    |
 | `debug-out`                 | <p>Folder in which to save debug info (e.g. a screenshot of the device in case of failure). Will be created if it does not exist.</p>                                                                                                                               | `false`  | `""`                    |
@@ -62,6 +63,18 @@ See [this blog post](https://kevintechnology.com/posts/leaf-widget/) for more in
 ```yaml
 - uses: kevincon/nissan-connect-scraper@v1
   with:
+    google-play-email:
+    # A Google Play Store account email address to use to download the NissanConnect® Android app.
+    #
+    # Required: true
+    # Default: ""
+
+    google-play-token:
+    # A Google Play Store account token to use to download the NissanConnect® Android app. See https://github.com/EFForg/apkeep/blob/master/USAGE-google-play.md for instructions on how to obtain this 'AAS token'.
+    #
+    # Required: true
+    # Default: ""
+
     user-id:
     # NissanConnect® account user ID to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.
     #
@@ -70,12 +83,6 @@ See [this blog post](https://kevintechnology.com/posts/leaf-widget/) for more in
 
     password:
     # NissanConnect® account password to use to sign into the app. If either `user-id` or `password` is not provided, the app will enter "demo mode" instead of signing in.
-    #
-    # Required: false
-    # Default: ""
-
-    android-app-version:
-    # The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided.
     #
     # Required: false
     # Default: ""
