@@ -14,7 +14,6 @@ inputs:
   android-app-version:
     description: "The version of the NissanConnect® Android app to use. If not provided, defaults to latest version. Caching of the app binary is only enabled if provided."
     required: false
-    default: "8.0.4"
   last-refresh-date-format:
     description: "The format to use for the last refresh date. See https://arrow.readthedocs.io/en/latest/guide.html#supported-tokens for accepted tokens."
     required: false
