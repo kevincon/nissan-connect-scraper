@@ -54,6 +54,7 @@ jobs:
           DEBUG_OUTPUT_FOLDER: ${{ env.DEBUG_OUTPUT_FOLDER }}
         with:
           set-up-only: true
+          android-app-version: "8.0.4" # last release published with x86_64 support
           debug-out: ${{ env.DEBUG_OUTPUT_FOLDER }}
       - name: Check AVD cache
         uses: actions/cache@v4
