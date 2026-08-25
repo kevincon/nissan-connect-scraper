@@ -159,7 +159,7 @@ def main(
         "platformName": "Android",
         "automationName": "uiautomator2",
         "deviceName": "Android",
-        "language: "en",
+        "language": "en",
         "locale": "US",
         "autoGrantPermissions": True,
         "uiautomator2ServerInstallTimeout": 120000,
