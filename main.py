@@ -155,7 +155,7 @@ def main(
     if debug_out and not debug_out.exists():
         debug_out.mkdir(parents=True, exist_ok=True)
 
-    capabilities = dict(
+    capabilities = {
         platformName="Android",
         automationName="uiautomator2",
         deviceName="Android",
@@ -163,7 +163,7 @@ def main(
         locale="US",
         autoGrantPermissions=True,
         uiautomator2ServerInstallTimeout=120000,
-    )
+    }
     if avd:
         capabilities["appium:avd"] = avd
     capabilities["appium:app"] = str(nissan_connect_app_apk)
