@@ -156,13 +156,13 @@ def main(
         debug_out.mkdir(parents=True, exist_ok=True)
 
     capabilities = {
-        platformName="Android",
-        automationName="uiautomator2",
-        deviceName="Android",
-        language="en",
-        locale="US",
-        autoGrantPermissions=True,
-        uiautomator2ServerInstallTimeout=120000,
+        "platformName": "Android",
+        "automationName": "uiautomator2",
+        "deviceName": "Android",
+        "language: "en",
+        "locale": "US",
+        "autoGrantPermissions": True,
+        "uiautomator2ServerInstallTimeout": 120000,
     }
     if avd:
         capabilities["appium:avd"] = avd
