@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from dateutil.parser import parser as dateutil_parser
@@ -33,7 +33,7 @@ def demo_output() -> VehicleData:
 
 def test_demo_output(demo_output: VehicleData) -> None:
     assert 0 <= int(demo_output.battery_state_of_charge) <= 100
-    assert dateutil_parser().parse(demo_output.last_refresh_date).date() <= datetime.now(timezone.utc).date()
+    assert dateutil_parser().parse(demo_output.last_refresh_date).date() <= datetime.now(UTC).date()
     assert demo_output.charger_state == "UNPLUGGED..."
     assert 0 <= int(demo_output.range_minimum) <= 500
     assert 0 <= int(demo_output.range_maximum) <= 500
